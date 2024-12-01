@@ -1,0 +1,71 @@
+name: Docker Container Image
+run-name: Docker Container Image (${{ inputs.version }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SDK version
+        type: choice
+        options:
+          - stable
+          - latest
+        required: true
+        default: stable
+
+env:
+  REGISTRY: ghcr.io
+  GIT_USER: frieder
+
+jobs:
+  aem:
+    name: Build AEM Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Container Registry Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.GIT_USER }}
+          password: ${{ secrets.GIT_TOKEN }}
+
+      - name: Download Build Artifacts
+        id: data
+        uses: ./.github/actions/helper
+        with:
+          url: ${{ secrets.REPO_URL }}
+          username: ${{ secrets.REPO_USER }}
+          password: ${{ secrets.REPO_PASS }}
+          version: ${{ inputs.version }}
+
+      - name: Extract SDK Archive
+        working-directory: ./tmp
+        run: |
+          unzip ./aem-sdk.zip
+          mv ./aem-sdk-quickstart*.jar ./aem-quickstart.jar
+
+      - name: Build & Push Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ steps.data.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ inputs.version }}
+          labels: |
+            org.opencontainers.image.title=AEM Container Image
+            org.opencontainers.image.ref.name=AEM Container Image \
+            org.opencontainers.image.url=https://github.com/frieder/aem-container
+            org.opencontainers.image.created=${{ steps.data.outputs.date }}
+            org.opencontainers.image.revision=${{ steps.data.outputs.rev }}
+            org.opencontainers.image.version=${{ steps.data.outputs.version }}

@@ -1,0 +1,75 @@
+name: Podman Container Image
+run-name: Podman Container Image (${{ inputs.version }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SDK version
+        type: choice
+        options:
+          - stable
+          - latest
+        required: true
+        default: stable
+
+env:
+  REGISTRY: ghcr.io
+  GIT_USER: frieder
+
+jobs:
+  aem:
+    name: Build AEM Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Container Registry Login
+        run: |
+          echo ${{ secrets.GIT_TOKEN }} | podman login ${{ env.REGISTRY }} -u ${{ env.GIT_USER }} --password-stdin
+
+      - name: Download Build Artifacts
+        id: data
+        uses: ./.github/actions/helper
+        with:
+          url: ${{ secrets.REPO_URL }}
+          username: ${{ secrets.REPO_USER }}
+          password: ${{ secrets.REPO_PASS }}
+          version: ${{ inputs.version }}
+
+      - name: Extract SDK Archive
+        working-directory: ./tmp
+        run: |
+          unzip ./aem-sdk.zip
+          mv ./aem-sdk-quickstart*.jar ./aem-quickstart.jar
+
+      - name: Install qemu package
+        run: |
+          sudo apt update
+          sudo apt install -y qemu-user-static
+
+      - name: Build Container Image
+        run: |
+          podman build \
+            --format docker \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg TEMURIN_VERSION="${{ steps.data.outputs.jdk }}" \
+            --label "org.opencontainers.image.title=AEM Container Image" \
+            --label "org.opencontainers.image.ref.name=AEM Container Image" \
+            --label "org.opencontainers.image.url=https://github.com/frieder/aem-container" \
+            --label "org.opencontainers.image.created=${{ steps.data.outputs.date }}" \
+            --label "org.opencontainers.image.revision=${{ steps.data.outputs.rev }}" \
+            --label "org.opencontainers.image.version=${{ steps.data.outputs.version }}" \
+            --manifest ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ steps.data.outputs.version }} \
+            .
+
+      - name: Push Container Image
+        run: |
+          podman manifest push ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ steps.data.outputs.version }} \
+                               ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ steps.data.outputs.version }}
+          podman manifest push ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ steps.data.outputs.version }} \
+                               ${{ env.REGISTRY }}/${{ env.GIT_USER }}/aem:${{ inputs.version }}

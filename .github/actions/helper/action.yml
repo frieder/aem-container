@@ -1,0 +1,22 @@
+name: VHelper
+description: Helper that parses the version.json, downloads the artifacts and registers outputs
+inputs:
+  version:
+    description: The AEM version (either stable or latest)
+    required: true
+  username:
+    description: The user used for downloading artifacts
+    required: false
+  password:
+    description: The password used for downloading artifacts
+    required: false
+  token:
+    description: The token used for downloading artifacts
+    required: false
+  url:
+    description: The URL of the artifact repository from which to download the artifacts from
+    required: true
+
+runs:
+  using: "node20"
+  main: "./dist/index.js"
