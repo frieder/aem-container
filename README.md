@@ -46,7 +46,7 @@ podman run -d \
   -e JVM_XMX="4g" \
   -e JVM_META="512m" \
   -e AEM_RUNMODE="author,aemdev" \
-  -p 4502:4000 \
+  -p 4502:4500 \
   -p 14502:30303 \
   -p 24502:8686 \
   -v $(pwd)/volume/repo:/aem/crx-quickstart/repository \
@@ -64,7 +64,7 @@ podman run -d \
 
 | Port  | Description |
 |-------|-------------|
-| 4000  | HTTP port   |
+| 4500  | HTTP port   |
 | 30303 | Debug port  |
 | 8686  | JMX port    |
 

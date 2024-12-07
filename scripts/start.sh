@@ -20,5 +20,5 @@ exec java \
     \
     start -c /aem/crx-quickstart -i launchpad \
     -Dsling.properties=conf/sling.properties \
-    -a 0.0.0.0 -p 4000 \
+    -a 0.0.0.0 -p 4500 \
     >> /aem/crx-quickstart/logs/stdout.log

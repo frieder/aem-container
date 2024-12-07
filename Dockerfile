@@ -41,7 +41,7 @@ WORKDIR /aem
 
 COPY --from=builder /tmp/aem ./
 
-EXPOSE 4000 30303 8686
+EXPOSE 4500 30303 8686
 
 VOLUME ["/aem/crx-quickstart/repository", "/aem/crx-quickstart/logs", "/aem/crx-quickstart/install"]
 
